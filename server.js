@@ -29,14 +29,15 @@ function handleLocation(request,response) {
 
   let responToRequestObject= new CityLocation(name,newCity,latitude,longitude);
   response.send(responToRequestObject);
+//   return responToRequestObject;
 }
 
 
 
 // constractor
-function CityLocation(name,newCity,latitude,longitude) {
-  this.name=name;
+function CityLocation(newCity,name,latitude,longitude) {
   this.newCity=newCity;
+  this.name=name;
   this.latitude=latitude;
   this.longitude=longitude;
 }
