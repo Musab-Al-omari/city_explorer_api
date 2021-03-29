@@ -107,47 +107,39 @@ function Location(city,date) {
 
 
 
-const myWeather = [];
-function handleWeather(request,response){
 
+function handleWeather(request,response){
+  let myWeatherArray = [];
+  console.log(myWeatherArray.map());
   const city = request.query.city;
 
 
 
 
-  if (myWeather[city]) {
+  if (myWeatherArray.city) {
     // console.log('2.from my local data');
 
 
-    response.send(myWeather[city]);
+    response.send(myWeatherArray);
 
   } else {
-
-
-
     let key = process.env.WEATHER_API_KEY;
     const url = `https://api.weatherbit.io/v2.0/forecast/daily?city=${city},NC&key=${key}`;
+
     superagent.get(url).then(res=> {
+      console.log(res.body);
+      myWeatherArray=res.body.data.map(WeatherData=>{
 
+        let time =WeatherData.datetime;
+        time=time.replace('-','/');
+        let date = new Date(time);
+        let timeToDate=date.toString();
+        let newDate= timeToDate.slice(0,16);
+        let weather = new Weather(city, WeatherData,newDate);
+        return weather;
+      });
 
-
-
-
-      const WeatherData = res.body[0];
-
-
-      let time =WeatherData.data[0].datetime;
-      time=time.replace('-','/');
-      let date = new Date(time);
-      let timeToDate=date.toString();
-      let newDate= timeToDate.slice(0,16);
-
-
-      const weather = new Weather(city, WeatherData,newDate);
-
-
-      myWeather[city] = weather;
-      response.send(weather);
+      response.send(myWeatherArray);
 
     }).catch((err)=> {
       console.log('ERROR IN LOCATION API');
@@ -161,7 +153,7 @@ function handleWeather(request,response){
 
 function Weather(city,WeatherData,newDate) {
   this.city=city;
-  this.forecast=WeatherData.data[0].weather['description'];
+  this.forecast=WeatherData.weather['description'];
   this.time=newDate;
 }
 
