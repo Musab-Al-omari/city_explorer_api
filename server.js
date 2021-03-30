@@ -19,6 +19,9 @@ app.use(cors());
 // Route Definitions
 app.get('/location',handleLocation);
 app.get('/weather',handleWeather);
+app.get('/parks',handleParks);
+// app.get('/parks',handleParksRequest);
+
 
 
 // Express has an internal error handler.
@@ -29,7 +32,9 @@ app.get('/weather',handleWeather);
 app.use('*', notFoundHandler); // 404 not found url
 app.use(errorHandler);
 
-
+let lat ='';
+let lon ='';
+let city= '';
 function notFoundHandler(request, response) {
   response.status(404).send('requested API is Not Found!');
 }
@@ -48,7 +53,7 @@ function handleLocation(request,response) {
   // x.push("asd");
 
 
-  const city = request.query.city;
+  city = request.query.city;
 
 
   // instead of reading from .json file
@@ -79,6 +84,9 @@ function handleLocation(request,response) {
 
 
       const locationData = res.body[0];
+      // console.log(locationData);
+      lat=locationData.lat;
+      lon= locationData.lon;
       const location = new Location(city, locationData);
 
 
@@ -108,10 +116,12 @@ function Location(city,date) {
 
 
 
+
 function handleWeather(request,response){
+  // console.log('hi');
   let myWeatherArray = [];
-  console.log(myWeatherArray.map());
-  const city = request.query.city;
+
+  // const city = request.query.city;
 
 
 
@@ -123,26 +133,37 @@ function handleWeather(request,response){
     response.send(myWeatherArray);
 
   } else {
-    let key = process.env.WEATHER_API_KEY;
-    const url = `https://api.weatherbit.io/v2.0/forecast/daily?city=${city},NC&key=${key}`;
 
+    let key = process.env.WEATHER_API_KEY;
+    const url = `https://api.weatherbit.io/v2.0/forecast/daily?&lat=${lat}&lon=${lon}&key=${key}`;
+    // const url = `https://api.weatherbit.io/v2.0/forecast/daily?city=${city}&key=${key}`;
+    // console.log('url',url);
     superagent.get(url).then(res=> {
-      console.log(res.body);
+      // console.log('iam res',res.body);
       myWeatherArray=res.body.data.map(WeatherData=>{
 
         let time =WeatherData.datetime;
-        time=time.replace('-','/');
-        let date = new Date(time);
-        let timeToDate=date.toString();
-        let newDate= timeToDate.slice(0,16);
-        let weather = new Weather(city, WeatherData,newDate);
-        return weather;
-      });
 
+        time=time.replace('-','/');
+
+        let date = new Date(time);
+
+        let timeToDate=date.toString();
+
+        let newDate= timeToDate.slice(0,16);
+
+        let newweather= new Weather( WeatherData,newDate);
+        // console.log('newweather',newWeather);
+        return newweather;
+
+      });
+      // console.log(myWeatherArray);
       response.send(myWeatherArray);
 
     }).catch((err)=> {
-      console.log('ERROR IN LOCATION API');
+
+      console.log('ERROR IN wether API');
+
       console.log(err);
     });
   }
@@ -151,10 +172,41 @@ function handleWeather(request,response){
 
 // constructor for weather
 
-function Weather(city,WeatherData,newDate) {
-  this.city=city;
+function Weather(WeatherData,newDate) {
+
   this.forecast=WeatherData.weather['description'];
   this.time=newDate;
+}
+
+
+
+
+// park
+function handleParks(request,response) {
+  let key =process.env.PARKS_API_KEY;
+  let url =`https://developer.nps.gov/api/v1/parks?lat=${request.latitude}&lon=${request.longitude}&parkCode=acad&api_key=${key}`;
+  superagent.get(url).then(res=>{
+    let myParkArray=[];
+    res.body.data.map(parkDate=>{
+      myParkArray.push(new Park(parkDate));
+    });
+
+    response.send(myParkArray);
+  }).catch((err)=> {
+
+    console.log('ERROR IN park API');
+    console.log(err);
+  });
+}
+
+// park constractor
+function Park(parkDate) {
+  this.name=parkDate.name;
+  let myarr= Object.values(parkDate.addresses[0]);
+  this.address=myarr.toString();
+  this.fee=parkDate.fees.toString() ||':0.00';
+  this.description=parkDate.description;
+  this.url=parkDate.url;
 }
 
 
