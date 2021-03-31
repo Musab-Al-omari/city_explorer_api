@@ -99,7 +99,7 @@ function handleLocation(request, response) {
           .then(() => {
             response.send(location);
           });
-
+        //
         // myLocalLocations[city] = location;
       }).catch((err) => {
         console.log('ERROR IN LOCATION API');
