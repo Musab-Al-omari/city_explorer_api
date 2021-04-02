@@ -2,7 +2,6 @@
 // Load Environment Variables from the .env file
 require('dotenv').config();
 
-
 // Application Dependencies
 const superagent = require('superagent');
 const express = require('express');
@@ -17,18 +16,11 @@ const PORT = process.env.PORT;
 const app = express();
 app.use(cors());
 
-
 // Route Definitions
 app.get('/location', handleLocation);
 app.get('/weather', handleWeather);
 app.get('/parks', handleParks);
 app.get('/citys', dataBase);
-
-
-
-// Express has an internal error handler.
-// so this means if you did not create your own.
-// express handler will respond
 
 
 app.use('*', notFoundHandler); // 404 not found url
@@ -59,11 +51,8 @@ function dataBase(request, response) {
 }
 
 function notFoundHandler(request, response) {
-
   response.status(404).send('requested API is Not Found!');
 }
-
-
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, request, response, next) {
@@ -80,23 +69,25 @@ function handleLocation(request, response) {
   client.query(SQL, [city]).then(result => {
     console.log(result.rowCount > 0);
     if (result.rowCount > 0) {
-
       console.log('from data base');
-      response.send(result.rows[0]);
+      response.send(result.rows);
 
     } else {
-
       console.log('1.from the location API');
-
       const url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json&limit=1`;
       superagent.get(url).then(res => {
 
         const location = new Location(city, res.body[0]);
 
         SQL = 'INSERT INTO location (city,display_name,latitude,longitude)VALUES($1,$2,$3,$4)';
-        let values = [city, location.display_name, location.lat, location.lon];
+
+        let values = [location.search_query, location.formatted_query, location.latitude, location.longitude];
+        // console.log('hello', values);
+        // console.log('hello', location);
+
         client.query(SQL, values)
           .then(() => {
+            // console.log(location);
             response.send(location);
           });
         //
